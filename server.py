@@ -15,22 +15,24 @@ def generate_movement():
 
 async def set_tickers(websocket):
     print("A client is connected")
-    tickers = {f'ticker_{i:02}': 0 for i in range(100)}
+    data = {f'ticker_{i:02}': 0 for i in range(100)}
+    data.update({"date": datetime.datetime.utcnow().isoformat() + "Z"})
 
     while True:
-        for k in tickers.keys():
-            tickers[k] += generate_movement()
-
-        date = datetime.datetime.utcnow().isoformat() + "Z"
-        data = json.dumps({"date": date, "tickers": tickers})
-
+        json_data = json.dumps(data)
         try:
-            await websocket.send(data)
+            await websocket.send(json_data)
         except websockets.exceptions.ConnectionClosed as e:
             print("A client is disconnected")
-            print(e)
             break
+
         await asyncio.sleep(1)
+
+        for key in data.keys():
+            if key == "date":
+                data[key] = datetime.datetime.utcnow().isoformat() + "Z"
+            else:
+                data[key] += generate_movement()
 
 
 async def main():
